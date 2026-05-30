@@ -1,0 +1,242 @@
+This workflow detects replies from Gmail and WhatsApp,
+identifies the lead in Zoho CRM,
+updates status to "Contacted",
+and stops further follow-ups.
+
+Tools Used:
+- n8n
+- Zoho CRM API
+- Gmail Trigger
+- Twilio WhatsApp API
+
+Use Case:
+Real estate lead follow-up automation.
+📘 WORKFLOW 8 DOCUMENTATION
+Name:
+AT-8: Reply Tracking & CRM Update System (n8n)
+
+🧠 1. CLIENT REQUIREMENT
+Client uses:
+	• Website + Ads → Leads into Zoho CRM 
+	• Email + WhatsApp for communication 
+Problem:
+	• No tracking of replies 
+	• CRM not updated when customer responds 
+	• Follow-ups continue even after reply 
+Client wants:
+	• Detect replies (Email + WhatsApp) 
+	• Update CRM status → “Contacted” 
+	• Stop further follow-ups 
+
+🔍 2. REQUIREMENT UNDERSTANDING
+You built:
+✔ Incoming reply detection
+✔ Identify lead using email
+✔ Fetch lead from Zoho
+✔ Update Lead_Status → Contacted
+✔ Stop follow-up logic
+
+📥 3. INPUT DATA FLOW
+Gmail Trigger Input:
+
+{
+  "From": "Karthik <karthik@email.com>",
+  "Subject": "Re: HOT LEAD",
+  "snippet": "I am interested..."
+}
+
+⚙️ 4. WORKFLOW ARCHITECTURE
+
+Gmail Trigger
+   ↓
+Edit Fields (Extract Email)
+   ↓
+HTTP Request (Search Lead in Zoho)
+   ↓
+IF (Lead Found?)
+   ↓
+Zoho Update Lead (Status = Contacted)
+   ↓
+IF (Lead_Status != Contacted)
+   ↓
+Send Follow-up OR Stop
+
+🧩 5. NODE-BY-NODE CONFIGURATION
+
+🔹 5.1 Gmail Trigger Node
+Parameters:
+	• Credential: Gmail OAuth2 
+	• Mode: Every Minute 
+	• Event: Message Received 
+	• Simplify: ON 
+Filter:
+
+subject:Lead
+
+🔹 5.2 Edit Fields (Set Node)
+Purpose:
+Extract email from Gmail “From”
+Field:
+
+email
+Expression:
+
+{{ $json.From.match(/<(.*?)>/)[1] }}
+
+🔹 5.3 HTTP Request (Zoho Search Lead)
+Method:
+GET
+URL:
+
+https://www.zohoapis.in/crm/v2/Leads/search
+Query Params:
+Name	Value
+email	{{ $('Webhook').item.json.body.email }}
+⚠️ (Later fixed to correct source)
+
+🔹 FINAL CORRECT VERSION (IMPORTANT)
+Query Param Value:
+
+{{ $json.email }}
+
+🔹 5.4 IF Node (Lead Found Check)
+Condition:
+
+{{ $json.data.length > 0 }}
+
+🔹 5.5 Zoho Update Lead Node
+Resource:
+Lead
+Operation:
+Update
+Lead ID:
+
+{{ $json.data[0].id }}
+Field:
+
+Lead_Status = Contacted
+
+🔹 5.6 IF Node (Stop Follow-up Logic)
+Condition:
+
+{{ $json.data[0].Lead_Status }}
+Operator:
+
+is not equal to
+Value:
+
+Contacted
+
+🧪 6. TESTING
+Test Case 1:
+	• Send email reply 
+	• Expected:
+✔ Email captured
+✔ Lead found
+✔ CRM updated
+✔ No follow-up sent 
+
+Test Case 2:
+	• Unknown email 
+	• Expected:
+❌ Lead not found
+❌ No update 
+
+⚠️ 7. COMMON ERRORS + FIXES
+
+❌ Error 1: Undefined Email
+Cause: Wrong mapping
+Fix:
+
+{{ $json.email }}
+
+❌ Error 2: IF condition wrong branch
+Wrong:
+
+{{ $json.Lead_Status }}
+Correct:
+
+{{ $json.data[0].Lead_Status }}
+
+❌ Error 3: Twilio “queued”
+Cause:
+	• Sandbox not joined 
+	• Session expired 
+Fix:
+	• Send “join <code>” in WhatsApp 
+	• Or use production WhatsApp API 
+
+📦 8. GITHUB (READY FORMAT)
+
+Repo Name:
+
+ai-reply-tracking-crm-n8n
+
+Description:
+
+Automated reply tracking system using n8n, Gmail, Twilio, and Zoho CRM.
+Updates lead status automatically and stops follow-ups when user responds.
+
+README.md
+Title:
+
+# AI Reply Tracking & CRM Update System
+Content:
+
+This workflow detects replies from Gmail and WhatsApp,
+identifies the lead in Zoho CRM,
+updates status to "Contacted",
+and stops further follow-ups.
+
+Tools Used:
+- n8n
+- Zoho CRM API
+- Gmail Trigger
+- Twilio WhatsApp API
+
+Use Case:
+Real estate lead follow-up automation.
+
+🚀 9. DEPLOYMENT
+Steps:
+	1. Activate workflow 
+	2. Keep n8n running (cloud/self-host) 
+	3. Ensure Gmail trigger active 
+	4. Ensure Zoho API valid 
+
+👨‍💼 10. CLIENT DEMO SCRIPT
+Say this:
+	“Whenever a lead replies via email or WhatsApp,
+	our system automatically detects it,
+	finds the lead in CRM,
+	updates status to ‘Contacted’,
+	and stops further follow-ups.”
+
+📦 11. CLIENT HANDOVER
+Give:
+	• n8n workflow JSON 
+	• README file 
+	• Credentials guide 
+	• Demo video 
+
+🔑 12. CREDENTIALS REQUIRED
+Client must provide:
+	• Zoho CRM API access 
+	• Gmail access 
+	• Twilio account (optional) 
+
+🔐 13. SECURITY
+	• Never expose API keys 
+	• Use n8n credentials manager 
+	• Restrict webhook access 
+	• Use environment variables 
+
+✅ 14. COMPLETION CHECK
+You can say “DONE” when:
+✔ Email replies detected
+✔ Lead matched correctly
+✔ CRM updated
+✔ Follow-up stopped
+✔ Tested end-to-end
+
+
