@@ -1,0 +1,159 @@
+{
+  "name": "AT - 8 : Reply Tracking & CRM Update System",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {
+          "q": "subject:Lead"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -1456,
+        -192
+      ],
+      "id": "b51a1108-ef32-4ddf-9483-9299a7ae784b",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ODwBjrxRlCoHe7BY",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8a2c1264-a399-4307-ab78-a77209d4ae01",
+              "name": "email",
+              "value": "={{ $json.From.match(/<(.+?)>/)[1] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1248,
+        -192
+      ],
+      "id": "63fbc920-0498-4236-ad01-15e2917e8cc7",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "url": "https://www.zohoapis.in/crm/v2/Leads/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $json.email }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1040,
+        -192
+      ],
+      "id": "c98dec2f-c460-44ad-966e-f6c3a059a466",
+      "name": "HTTP Request",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "PNJJJk4tPHBRTfm9",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "lead",
+        "operation": "update",
+        "leadId": "={{ $json.data[0].id }}",
+        "updateFields": {
+          "Lead_Status": "Contacted"
+        }
+      },
+      "type": "n8n-nodes-base.zohoCrm",
+      "typeVersion": 1,
+      "position": [
+        -832,
+        -192
+      ],
+      "id": "84028563-675f-404c-a331-0b0cc6b7d669",
+      "name": "Update a lead",
+      "credentials": {
+        "zohoOAuth2Api": {
+          "id": "KRhe3Y4eb29Tbvlm",
+          "name": "Zoho account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Update a lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "45c21180-ec38-4abe-871f-b7c075064a18",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b4c7aec71c23cdc802c4dfebcd5b169106ef811e3f5d7ee083aa88bf7f83f60b"
+  },
+  "id": "O9tEQcMGgcRRIlYE",
+  "tags": []
+}
