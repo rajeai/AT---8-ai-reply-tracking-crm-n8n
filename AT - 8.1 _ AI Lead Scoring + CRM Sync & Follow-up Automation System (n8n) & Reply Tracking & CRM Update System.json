@@ -1,0 +1,1295 @@
+{
+  "name": "AT - 8.1 : AI Lead Scoring + CRM Sync & Follow-up Automation System (n8n) & Reply Tracking & CRM Update System",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "new-lead",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -992,
+        96
+      ],
+      "id": "aadecc08-ea41-4edf-a747-f4d04b011df4",
+      "name": "Webhook",
+      "webhookId": "e65e9eb6-072b-4787-a059-503c8c60103c"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "=You are a lead scoring assistant.\n\nClassify the lead into HOT, WARM, or COLD.\n\nRules:\n- HOT: Budget > 5L and timeframe <= 1 month\n- WARM: Budget 2L–5L or timeframe 1–3 months\n- COLD: Budget < 2L or timeframe > 3 months\n\nLead Data:\nName: {{ $('Webhook').item.json.body.name }}\nEmail: {{ $('Webhook').item.json.body.email }}\nBudget: {{ $('Webhook').item.json.body.budget }}\nTimeframe: {{ $('Webhook').item.json.body.timeframe }}\nSource: {{ $('Webhook').item.json.body.source }}\n\nOnly respond with one word:\nHOT or WARM or COLD"
+            },
+            {
+              "content": "=Budget: {{$json[\"body\"][\"budget\"]}}\nTimeframe: {{$json[\"body\"][\"timeframe\"]}}\nLocation: {{$json[\"body\"][\"location\"]}}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -368,
+        112
+      ],
+      "id": "855ab24d-a5c9-4fa2-8759-f8101c34ac47",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4c19646d-353e-459f-8d08-03d64937edd4",
+              "leftValue": "={{$json[\"output\"][0][\"content\"][0][\"text\"]}}",
+              "rightValue": "HOT",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -64,
+        0
+      ],
+      "id": "7cc2dbd7-0c92-479f-9264-99d3171497d4",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ca74c0c4-21ac-455a-bdfa-b543eeb46fcc",
+              "leftValue": "={{$json[\"output\"][0][\"content\"][0][\"text\"]}}",
+              "rightValue": "WARM",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        96,
+        240
+      ],
+      "id": "1d9086dc-e3ec-4220-b2a3-63a8cc5cefce",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "url": "https://www.zohoapis.in/crm/v2/Leads/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $('Webhook').item.json.body.email }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -672,
+        -208
+      ],
+      "id": "0d82ae05-82a3-4a48-811a-b659f86bedf5",
+      "name": "HTTP Request",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "PNJJJk4tPHBRTfm9",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a8e2edf8-607f-477d-b7d3-0738059e930d",
+              "leftValue": "={{$json[\"data\"].length}}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -528,
+        -208
+      ],
+      "id": "b4c3f29b-7ae5-45b9-b8fd-7087538928bb",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "62cafa21-1c23-4620-acbb-c4fdbaede529",
+              "name": "name",
+              "value": "={{$json[\"body\"][\"name\"]}}",
+              "type": "string"
+            },
+            {
+              "id": "d620e8cd-6148-4292-bf40-83d25f980b14",
+              "name": "email",
+              "value": "={{$json[\"body\"][\"email\"]}}",
+              "type": "string"
+            },
+            {
+              "id": "92069d27-1716-40ee-b6d3-e65c6e56d9a1",
+              "name": "budget",
+              "value": "={{$json[\"body\"][\"budget\"]}}",
+              "type": "string"
+            },
+            {
+              "id": "71a49b3a-eb35-45c2-b4c1-be30d684fb2a",
+              "name": "timeframe",
+              "value": "={{$json[\"body\"][\"timeframe\"]}}",
+              "type": "string"
+            },
+            {
+              "id": "ae0d86de-5091-4fc8-b6d4-f380e1342151",
+              "name": "source",
+              "value": "={{$json[\"body\"][\"source\"]}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -832,
+        96
+      ],
+      "id": "3bc30a1a-ffe7-43b2-9a8a-5b474b18b031",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "resource": "lead",
+        "operation": "update",
+        "leadId": "={{$node[\"HTTP Request\"].json[\"data\"][0][\"id\"]}}",
+        "updateFields": {
+          "customFields": {
+            "customFields": [
+              {
+                "fieldId": "Budget",
+                "value": "={{$node[\"Webhook\"].json[\"body\"][\"budget\"]}}"
+              },
+              {
+                "fieldId": "Timeframe",
+                "value": "={{$node[\"Webhook\"].json[\"body\"][\"timeframe\"] === \"3 months\" ? \"1–3 months\" : $node[\"Webhook\"].json[\"body\"][\"timeframe\"]}}"
+              }
+            ]
+          },
+          "Description": "Lead re-engaged via automation",
+          "Lead_Source": "={{$node[\"Webhook\"].json[\"body\"][\"source\"]}}",
+          "Lead_Status": "={{ $json.data[0].Lead_Status }}"
+        }
+      },
+      "type": "n8n-nodes-base.zohoCrm",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        -480
+      ],
+      "id": "cb131be1-f956-4842-b444-38a4acb0f089",
+      "name": "Update a lead",
+      "credentials": {
+        "zohoOAuth2Api": {
+          "id": "KRhe3Y4eb29Tbvlm",
+          "name": "Zoho account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "lead",
+        "Company": "QuicksolveAI",
+        "lastName": "={{ $('Webhook').item.json.body.name }}",
+        "additionalFields": {
+          "customFields": {
+            "customFields": [
+              {
+                "fieldId": "Budget",
+                "value": "={{ $('Webhook').item.json.body.budget }}"
+              },
+              {
+                "fieldId": "Timeframe",
+                "value": "={{ $('Webhook').item.json.body.timeframe }}"
+              }
+            ]
+          },
+          "Description": "=Budget: {{$node[\"Webhook\"].json[\"body\"][\"budget\"]}}, Location: {{$node[\"Webhook\"].json[\"body\"][\"location\"]}}, Timeframe: {{$node[\"Webhook\"].json[\"body\"][\"timeframe\"]}}",
+          "Email": "={{ $('Webhook').item.json.body.email }}",
+          "First_Name": "={{ $('Webhook').item.json.body.name }}",
+          "Lead_Source": "={{ $('Webhook').item.json.body.source }}",
+          "Lead_Status": "={{ $('Message a model').item.json.output[0].content[0].text }}",
+          "Phone": "={{ $('Webhook').item.json.body.phone.toString() }}"
+        }
+      },
+      "type": "n8n-nodes-base.zohoCrm",
+      "typeVersion": 1,
+      "position": [
+        160,
+        -192
+      ],
+      "id": "33446b1a-f75b-4f1b-8fef-7a5b3b7cc84b",
+      "name": "Create a lead-HOT",
+      "credentials": {
+        "zohoOAuth2Api": {
+          "id": "KRhe3Y4eb29Tbvlm",
+          "name": "Zoho account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "lead",
+        "Company": "QuicksolveAI",
+        "lastName": "={{ $('Webhook').item.json.body.name }}",
+        "additionalFields": {
+          "customFields": {
+            "customFields": [
+              {
+                "fieldId": "Budget",
+                "value": "={{ $('Webhook').item.json.body.budget }}"
+              },
+              {
+                "fieldId": "Timeframe",
+                "value": "={{ $('Webhook').item.json.body.timeframe }}"
+              }
+            ]
+          },
+          "Description": "=Budget: {{$node[\"Webhook\"].json[\"body\"][\"budget\"]}}, Location: {{$node[\"Webhook\"].json[\"body\"][\"location\"]}}, Timeframe: {{$node[\"Webhook\"].json[\"body\"][\"timeframe\"]}}",
+          "Email": "={{ $('Webhook').item.json.body.email }}",
+          "First_Name": "={{ $('Webhook').item.json.body.name }}",
+          "Lead_Source": "={{ $('Webhook').item.json.body.source }}",
+          "Lead_Status": "={{ $('Message a model').item.json.output[0].content[0].text }}",
+          "Phone": "={{ $('Webhook').item.json.body.phone.toString() }}"
+        }
+      },
+      "type": "n8n-nodes-base.zohoCrm",
+      "typeVersion": 1,
+      "position": [
+        240,
+        96
+      ],
+      "id": "dc4a6041-6efe-4332-a3da-a3e85d2127ed",
+      "name": "Create a lead-WARM",
+      "credentials": {
+        "zohoOAuth2Api": {
+          "id": "KRhe3Y4eb29Tbvlm",
+          "name": "Zoho account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "lead",
+        "Company": "QuicksolveAI",
+        "lastName": "={{ $('Webhook').item.json.body.name }}",
+        "additionalFields": {
+          "customFields": {
+            "customFields": [
+              {
+                "fieldId": "Budget",
+                "value": "={{ $('Webhook').item.json.body.budget }}"
+              },
+              {
+                "fieldId": "Timeframe",
+                "value": "={{ $('Webhook').item.json.body.timeframe }}"
+              }
+            ]
+          },
+          "Description": "=Budget: {{$node[\"Webhook\"].json[\"body\"][\"budget\"]}}, Location: {{$node[\"Webhook\"].json[\"body\"][\"location\"]}}, Timeframe: {{$node[\"Webhook\"].json[\"body\"][\"timeframe\"]}}",
+          "Email": "={{ $('Webhook').item.json.body.email }}",
+          "First_Name": "={{ $('Webhook').item.json.body.name }}",
+          "Lead_Source": "={{ $('Webhook').item.json.body.source }}",
+          "Lead_Status": "={{ $('Message a model').item.json.output[0].content[0].text }}",
+          "Phone": "={{ $('Webhook').item.json.body.phone.toString() }}"
+        }
+      },
+      "type": "n8n-nodes-base.zohoCrm",
+      "typeVersion": 1,
+      "position": [
+        256,
+        432
+      ],
+      "id": "f04c8f37-d13b-4325-8890-3c710788c053",
+      "name": "Create a lead-COLD",
+      "credentials": {
+        "zohoOAuth2Api": {
+          "id": "KRhe3Y4eb29Tbvlm",
+          "name": "Zoho account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Webhook').item.json.body.email }}",
+        "subject": "HOT LEAD: Immediate Attention Required",
+        "emailType": "text",
+        "message": "=Hi {{ $('Webhook').item.json.body.name }},\n\nThanks for your interest. Based on your requirements, we recommend acting quickly.\n\nOur team will contact you shortly.\n\n- Team",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        336,
+        -192
+      ],
+      "id": "dd0dc9df-20e9-471f-976f-b88e18fcac6d",
+      "name": "Send a message",
+      "webhookId": "3fa5025f-0da1-4105-8da1-3a0eabd1b77a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ODwBjrxRlCoHe7BY",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Webhook').item.json.body.email }}",
+        "subject": "WARM LEAD: Let’s Connect Soon",
+        "emailType": "text",
+        "message": "=Hi {{ $('Webhook').item.json.body.name }},\n\nThanks for your interest. We’d love to understand your needs better.\n\nLet us know a good time to connect.\n\n- Team",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        96
+      ],
+      "id": "35ee898b-3e8d-4e59-898e-39ef6357718c",
+      "name": "Send a message1",
+      "webhookId": "914bed67-8822-4910-bea7-c69a8bee2a9e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ODwBjrxRlCoHe7BY",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Webhook').item.json.body.email }}",
+        "subject": "COLD LEAD: Stay in Touch",
+        "emailType": "text",
+        "message": "=Hi {{ $('Webhook').item.json.body.name }},\n\nThanks for reaching out. Feel free to contact us anytime.\n\n- Team",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        432
+      ],
+      "id": "29fe2057-f84f-4c9f-8b4b-486f83c255cc",
+      "name": "Send a message2",
+      "webhookId": "b7a680c8-b9ad-4de4-ac1e-ee90d87cf1a7",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ODwBjrxRlCoHe7BY",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "+14155238886",
+        "to": "+917995085955",
+        "toWhatsapp": true,
+        "message": "=🔥 Hot Lead Alert!\n\nHi {{ $('Webhook').item.json.body.name }},\n\nWe received your request. Our team will contact you immediately.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        528,
+        -192
+      ],
+      "id": "beaa9214-41c3-401e-924a-62b329aef185",
+      "name": "Send an SMS/MMS/WhatsApp message",
+      "credentials": {
+        "twilioApi": {
+          "id": "EbOexRt4KhdA8o2n",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        704,
+        -192
+      ],
+      "id": "ff52bbbe-1c23-44ad-b90d-c884529d286b",
+      "name": "Wait",
+      "webhookId": "26f4874d-a6e4-45d3-8fd1-07481ea2127b"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "aed53109-6d6a-42bf-a6e7-a4758d86906a",
+              "leftValue": "={{ $json.lead_status }}",
+              "rightValue": "Contacted",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1264,
+        -192
+      ],
+      "id": "7b1f1b42-d8fb-4f32-a90d-e5a4b0b56002",
+      "name": "If3"
+    },
+    {
+      "parameters": {
+        "from": "+14155238886",
+        "to": "+917995085955",
+        "toWhatsapp": true,
+        "message": "=Hi {{ $('Webhook').item.json.body.name }},\n\nJust following up on your request. Let us know if you're still interested.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1504,
+        -208
+      ],
+      "id": "12fee221-dd58-4c19-975d-23a200c0072b",
+      "name": "Send an SMS/MMS/WhatsApp message1",
+      "credentials": {
+        "twilioApi": {
+          "id": "EbOexRt4KhdA8o2n",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Webhook').item.json.body.email }}",
+        "subject": "Lead re-engaged",
+        "emailType": "text",
+        "message": "=Hi {{ $('Webhook').item.json.body.name }},\n\nThanks for your interest. Based on your requirements, we recommend acting quickly.\n\nOur team will contact you shortly.\n\n- Team",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        48,
+        -480
+      ],
+      "id": "60c30e2d-0b9d-492b-87c5-e1cf4d83abc7",
+      "name": "Send a message3",
+      "webhookId": "3fa5025f-0da1-4105-8da1-3a0eabd1b77a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ODwBjrxRlCoHe7BY",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "+14155238886",
+        "to": "+917995085955",
+        "toWhatsapp": true,
+        "message": "=Lead re-engaged\n\nHi {{ $('Webhook').item.json.body.name }},\n\nWe received your request. Our team will contact you immediately.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        256,
+        -480
+      ],
+      "id": "ec0c96af-0c49-41fb-97b8-56119baecd6d",
+      "name": "Send an SMS/MMS/WhatsApp message2",
+      "credentials": {
+        "twilioApi": {
+          "id": "EbOexRt4KhdA8o2n",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        432,
+        -480
+      ],
+      "id": "cbd57d12-ac0c-4835-ac61-26f3f2185d6f",
+      "name": "Wait1",
+      "webhookId": "26f4874d-a6e4-45d3-8fd1-07481ea2127b"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "aed53109-6d6a-42bf-a6e7-a4758d86906a",
+              "leftValue": "={{ $json.lead_status }}",
+              "rightValue": "Contacted",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1040,
+        -480
+      ],
+      "id": "a32bd5d3-5932-489f-86f9-4540f47bd63b",
+      "name": "If4"
+    },
+    {
+      "parameters": {
+        "from": "+14155238886",
+        "to": "+917995085955",
+        "toWhatsapp": true,
+        "message": "=Hi {{ $('Webhook').item.json.body.name }},\n\nJust following up on your request. Let us know if you're still interested.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1264,
+        -496
+      ],
+      "id": "98efb91d-099c-4074-a908-122c4110b412",
+      "name": "Send an SMS/MMS/WhatsApp message3",
+      "credentials": {
+        "twilioApi": {
+          "id": "EbOexRt4KhdA8o2n",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://www.zohoapis.in/crm/v2/Leads/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $('Webhook').item.json.body.email }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        640,
+        -480
+      ],
+      "id": "83b7a9a2-b095-4a67-84e7-40f1b6331542",
+      "name": "HTTP Request1",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "PNJJJk4tPHBRTfm9",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2ef50c41-c2d5-429b-b86f-416145c52a34",
+              "name": "lead_status",
+              "value": "={{ $json.data[0].Lead_Status }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        848,
+        -480
+      ],
+      "id": "92bd4c36-a88c-423d-9454-59fd8d25428b",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "url": "https://www.zohoapis.in/crm/v2/Leads/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $('Webhook').item.json.body.email }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        896,
+        -192
+      ],
+      "id": "ba122917-f361-4aaa-a1aa-6abbef8c8e87",
+      "name": "HTTP Request2",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "PNJJJk4tPHBRTfm9",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2ef50c41-c2d5-429b-b86f-416145c52a34",
+              "name": "lead_status",
+              "value": "={{ $json.data[0].Lead_Status }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1072,
+        -192
+      ],
+      "id": "4ad27684-494e-4faf-998f-0aefe4b96f63",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "from": "+14155238886",
+        "to": "+917995085955",
+        "toWhatsapp": true,
+        "message": "=WARM Lead Alert!\n\nHi {{ $('Webhook').item.json.body.name }},\n\nWe received your request. Our team will contact you immediately.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        624,
+        96
+      ],
+      "id": "f29723f2-94de-442b-87ce-14edbb977f2a",
+      "name": "Send an SMS/MMS/WhatsApp message4",
+      "credentials": {
+        "twilioApi": {
+          "id": "EbOexRt4KhdA8o2n",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        96
+      ],
+      "id": "393c20a6-8c75-42ed-9b50-73d1c4eb2416",
+      "name": "Wait2",
+      "webhookId": "26f4874d-a6e4-45d3-8fd1-07481ea2127b"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "aed53109-6d6a-42bf-a6e7-a4758d86906a",
+              "leftValue": "={{ $json.lead_status }}",
+              "rightValue": "Contacted",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1360,
+        96
+      ],
+      "id": "27e7afed-bffe-4fa5-9214-0c0a9b807835",
+      "name": "If5"
+    },
+    {
+      "parameters": {
+        "from": "+14155238886",
+        "to": "+917995085955",
+        "toWhatsapp": true,
+        "message": "=Hi {{ $('Webhook').item.json.body.name }},\n\nJust following up on your request. Let us know if you're still interested.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        80
+      ],
+      "id": "6b12832a-1d35-4b50-aafd-d67cc1524dec",
+      "name": "Send an SMS/MMS/WhatsApp message5",
+      "credentials": {
+        "twilioApi": {
+          "id": "EbOexRt4KhdA8o2n",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://www.zohoapis.in/crm/v2/Leads/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $('Webhook').item.json.body.email }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        992,
+        96
+      ],
+      "id": "a4183adf-119c-4107-ad03-f1ffa7a706d7",
+      "name": "HTTP Request3",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "PNJJJk4tPHBRTfm9",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2ef50c41-c2d5-429b-b86f-416145c52a34",
+              "name": "lead_status",
+              "value": "={{ $json.data[0].Lead_Status }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1168,
+        96
+      ],
+      "id": "9fda693d-4ce6-4638-ae62-80e2ffda59b6",
+      "name": "Edit Fields3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Create a lead-HOT",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Update a lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Create a lead-WARM",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a lead-COLD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a lead-HOT": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a lead-WARM": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a lead-COLD": {
+      "main": [
+        [
+          {
+            "node": "Send a message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Send an SMS/MMS/WhatsApp message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send an SMS/MMS/WhatsApp message": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If3": {
+      "main": [
+        [
+          {
+            "node": "Send an SMS/MMS/WhatsApp message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message3": {
+      "main": [
+        [
+          {
+            "node": "Send an SMS/MMS/WhatsApp message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send an SMS/MMS/WhatsApp message2": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If4": {
+      "main": [
+        [
+          {
+            "node": "Send an SMS/MMS/WhatsApp message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a lead": {
+      "main": [
+        [
+          {
+            "node": "Send a message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "If4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "If3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send an SMS/MMS/WhatsApp message4": {
+      "main": [
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If5": {
+      "main": [
+        [
+          {
+            "node": "Send an SMS/MMS/WhatsApp message5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request3": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields3": {
+      "main": [
+        [
+          {
+            "node": "If5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message1": {
+      "main": [
+        [
+          {
+            "node": "Send an SMS/MMS/WhatsApp message4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "75dca9e5-6d9c-46f9-8960-d2e10c3eb241",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b4c7aec71c23cdc802c4dfebcd5b169106ef811e3f5d7ee083aa88bf7f83f60b"
+  },
+  "id": "wZLGNjcmjvDQh2sw",
+  "tags": []
+}
